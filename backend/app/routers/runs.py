@@ -13,7 +13,7 @@ router = APIRouter(prefix="/runs", tags=["runs"])
 @router.get("", response_model=list[RunRead])
 async def list_runs(session: AsyncSession = Depends(get_session)):
     repo = RunRepository(session)
-    return await repo.list()
+    return await repo.list_all()
 
 
 @router.get("/{run_id}", response_model=RunRead)

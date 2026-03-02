@@ -10,7 +10,7 @@ router = APIRouter(prefix="/populations", tags=["populations"])
 @router.get("", response_model=list[PopulationRead])
 async def list_populations(session: AsyncSession = Depends(get_session)):
     repo = PopulationRepository(session)
-    return await repo.list()
+    return await repo.list_all()
 
 
 @router.get("/{population_id}", response_model=PopulationRead)

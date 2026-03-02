@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.run import Run
@@ -9,7 +11,7 @@ class RunRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def list(self) -> list[Run]:
+    async def list_all(self) -> list[Run]:
         result = await self.session.execute(select(Run))
         return list(result.scalars().all())
 

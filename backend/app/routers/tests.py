@@ -10,7 +10,7 @@ router = APIRouter(prefix="/tests", tags=["tests"])
 @router.get("", response_model=list[TestRead])
 async def list_tests(session: AsyncSession = Depends(get_session)):
     repo = TestRepository(session)
-    return await repo.list()
+    return await repo.list_all()
 
 
 @router.get("/{test_id}", response_model=TestRead)
