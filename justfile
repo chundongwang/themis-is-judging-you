@@ -11,7 +11,11 @@ dev:
     tmux send-keys -t dev "cd {{justfile_directory()}}/backend && uv run python -m uvicorn app.main:app --reload --port 8000 --workers 1" Enter
     tmux split-window -h -t dev
     tmux send-keys -t dev "cd {{justfile_directory()}}/frontend && npm run dev" Enter
-    tmux attach -t dev
+    tmux attach -t dev || true
+
+# Stop the dev tmux session
+stop:
+    tmux kill-session -t dev
 
 # Start only the backend dev server
 [working-directory: 'backend']
