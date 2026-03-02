@@ -15,7 +15,7 @@ function Layout() {
       <header className="border-b sticky top-0 z-10 bg-background/95 backdrop-blur">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <NavLink to="/" className="font-bold text-lg">
-            ✨ Face Rater
+            ✨ Country Simulator
           </NavLink>
           <nav className="flex gap-6">
             <NavLink to="/" className={linkClass} end>

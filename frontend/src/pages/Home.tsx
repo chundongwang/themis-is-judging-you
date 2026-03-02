@@ -52,7 +52,7 @@ export function Home() {
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-10">
         <h1 className="text-4xl font-extrabold tracking-tight mb-3">
-          Face Rater
+          Country Simulator
         </h1>
         <p className="text-muted-foreground text-lg">
           Get your photo rated by a synthetic panel of judges drawn from any demographic population.
