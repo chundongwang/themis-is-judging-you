@@ -66,7 +66,8 @@ export interface Run {
   test_id: string
   executed_at: string
   panel_size: number
-  results: SubjectResult[]
+  status: string
+  results: SubjectResult[] | null
   log_id: string | null
 }
 
