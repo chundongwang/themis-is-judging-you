@@ -32,12 +32,19 @@ Before scaffolding the project, you need accounts and credentials on three platf
 
 ---
 
-## 3. Anthropic (LLM API)
+## 3. LLM Provider API Key(s)
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) and sign in.
-2. Navigate to **API Keys** → **Create Key** — name it `themis-prod`.
-3. Copy the key immediately (it won't be shown again).
-4. Set a usage budget under **Billing → Usage Limits** to avoid surprise bills during development.
+LiteLLM is model-agnostic — set up whichever providers you want to use. You only need one to start.
+
+| Provider  | Console                              | Env var                |
+|-----------|--------------------------------------|------------------------|
+| Anthropic | console.anthropic.com → API Keys     | `ANTHROPIC_API_KEY`    |
+| Google    | aistudio.google.com → API Keys       | `GEMINI_API_KEY`       |
+| OpenAI    | platform.openai.com → API Keys       | `OPENAI_API_KEY`       |
+
+For each provider you sign up with:
+1. Create an API key and copy it immediately (shown only once).
+2. Set a spend/usage budget in the provider's billing settings to cap dev costs.
 
 ---
 
@@ -48,8 +55,13 @@ Create a `.env` file at the project root (never commit this):
 ```sh
 # .env
 DATABASE_URL=postgresql://...        # from Railway Postgres Connect tab
-ANTHROPIC_API_KEY=sk-ant-...         # from Anthropic console
-LITELLM_DEFAULT_MODEL=claude-haiku-4-5-20251001  # cheapest model for development
+
+# Add keys only for the providers you use
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=...
+OPENAI_API_KEY=sk-...
+
+LITELLM_DEFAULT_MODEL=gemini/gemini-2.0-flash   # swap to whichever is cheapest
 ```
 
 Add `.env` to `.gitignore`:
@@ -65,7 +77,7 @@ echo ".env" >> .gitignore
 Once the backend is deployed, set the same variables in Railway so the production service can read them:
 
 1. Open your Railway project → select the backend service → **Variables** tab.
-2. Add `ANTHROPIC_API_KEY` and any other keys.
+2. Add whichever provider API keys you use (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, etc.) and `LITELLM_DEFAULT_MODEL`.
 3. `DATABASE_URL` is injected automatically by the Postgres plugin — no need to add it manually.
 
 ---
@@ -74,6 +86,6 @@ Once the backend is deployed, set the same variables in Railway so the productio
 
 - [ ] Vercel account created, CLI installed and logged in
 - [ ] Railway account created, project and Postgres provisioned, CLI installed
-- [ ] Anthropic API key created and saved
+- [ ] At least one LLM provider API key created and saved
 - [ ] Local `.env` file created
 - [ ] `.env` added to `.gitignore`
