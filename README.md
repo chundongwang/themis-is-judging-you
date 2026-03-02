@@ -1,4 +1,4 @@
-# Face Rater
+# Country Simulator
 
 Simulate a diverse panel of LLM-driven judges to rate any subject — headshots, profile photos, product images — across configurable demographic populations.
 
@@ -17,6 +17,7 @@ The frontend is a fully static build. All data lives in the backend. Progress st
 
 - **Node.js** 20+ and **npm**
 - **Python** 3.11+
+- **uv** — [install](https://docs.astral.sh/uv/getting-started/installation/): `curl -LsSf https://astral.sh/uv/install.sh | sh`
 - **Git**
 
 ---
@@ -27,7 +28,7 @@ The frontend is a fully static build. All data lives in the backend. Progress st
 
 ```sh
 git clone <repo-url>
-cd face-rater
+cd country-simulator
 ```
 
 ### 2. Backend
@@ -35,18 +36,18 @@ cd face-rater
 ```sh
 cd backend
 
-# Install dependencies (editable mode)
-pip install -e .
+# Create venv and install dependencies
+uv sync
 
 # Copy the env template and edit as needed
 cp .env.example .env
 
 # Seed the database with fixture populations and tests
-python -m scripts.seed
+uv run python -m scripts.seed
 
 # Start the dev server
 # --workers 1 is required — the SSE bridge uses an in-process asyncio.Queue
-uvicorn app.main:app --reload --port 8000 --workers 1
+uv run uvicorn app.main:app --reload --port 8000 --workers 1
 ```
 
 The API is now at `http://localhost:8000`. Tables are auto-created on first startup.
@@ -141,10 +142,10 @@ For production schema changes:
 cd backend
 
 # Generate a migration from model changes
-DATABASE_URL=<prod-url> alembic revision --autogenerate -m "describe change"
+DATABASE_URL=<prod-url> uv run alembic revision --autogenerate -m "describe change"
 
 # Apply migrations
-DATABASE_URL=<prod-url> alembic upgrade head
+DATABASE_URL=<prod-url> uv run alembic upgrade head
 ```
 
 ---
@@ -172,14 +173,14 @@ Set these environment variables in the Railway service dashboard:
 - `DATABASE_URL` is injected automatically by the Railway Postgres plugin
 - `CORS_ORIGINS=["https://<your-vercel-domain>"]`
 
-Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1`
+Start command: `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1`
 
 ---
 
 ## Project Structure
 
 ```
-face-rater/
+country-simulator/
 ├── frontend/
 │   ├── src/
 │   │   ├── api/          # mock API (swap for real fetch calls)
@@ -198,7 +199,8 @@ face-rater/
 │   │   ├── routers/      # HTTP endpoints
 │   │   └── engine/       # sampler, judge, aggregator, runner
 │   ├── scripts/seed.py   # fixture data
-│   └── pyproject.toml
+│   ├── pyproject.toml
+│   └── uv.lock           # generated on first uv sync
 └── docs/
     ├── tech-stack.md
     ├── judge-algorithm.md
