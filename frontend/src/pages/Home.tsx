@@ -41,7 +41,15 @@ export function Home() {
     if (!selectedPopulation) return
     setLoading(true)
     try {
-      const run = await createRun('test-001')
+      let subjectImage: string | null = null
+      if (file) {
+        subjectImage = await new Promise<string>((resolve) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(file)
+        })
+      }
+      const run = await createRun(selectedPopulation, parseInt(panelSize), subjectImage)
       navigate(`/results/${run.id}`, { state: { live: true } })
     } finally {
       setLoading(false)

@@ -8,7 +8,7 @@ interface RunListItemProps {
 }
 
 export function RunListItem({ run }: RunListItemProps) {
-  const firstResult = run.results[0]
+  const firstResult = run.results?.[0]
 
   return (
     <tr className="border-b hover:bg-muted/50 transition-colors">

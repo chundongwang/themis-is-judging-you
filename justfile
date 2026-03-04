@@ -8,7 +8,7 @@ default:
 # Run frontend and backend concurrently (split panes via tmux)
 dev:
     tmux new-session -d -s dev -x 220 -y 50
-    tmux send-keys -t dev "cd {{justfile_directory()}}/backend && uv run python -m uvicorn app.main:app --reload --port 8000 --workers 1" Enter
+    tmux send-keys -t dev "cd {{justfile_directory()}}/backend && uv run python -m uvicorn app.main:app --reload --port 8888 --workers 1" Enter
     tmux split-window -h -t dev
     tmux send-keys -t dev "cd {{justfile_directory()}}/frontend && npm run dev" Enter
     tmux attach -t dev || true
@@ -17,10 +17,18 @@ dev:
 stop:
     tmux kill-session -t dev
 
+# Restart both panes inside the existing tmux dev session (run this from within tmux)
+restart:
+    tmux send-keys -t dev:0.0 C-c
+    tmux send-keys -t dev:0.1 C-c
+    sleep 1
+    tmux send-keys -t dev:0.0 "cd {{justfile_directory()}}/backend && uv run python -m uvicorn app.main:app --reload --port 8888 --workers 1" Enter
+    tmux send-keys -t dev:0.1 "cd {{justfile_directory()}}/frontend && npm run dev" Enter
+
 # Start only the backend dev server
 [working-directory: 'backend']
 backend:
-    uv run python -m uvicorn app.main:app --reload --port 8000 --workers 1
+    uv run python -m uvicorn app.main:app --reload --port 8888 --workers 1
 
 # Start only the frontend dev server
 frontend:

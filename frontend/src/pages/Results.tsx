@@ -7,7 +7,7 @@ import { JudgeCard } from '@/components/JudgeCard'
 import { ScoreStats } from '@/components/ScoreStats'
 import { HistogramChart } from '@/components/HistogramChart'
 import { useSSE } from '@/hooks/useSSE'
-import { getRun } from '@/api/runs'
+import { getRun, getRunLog } from '@/api/runs'
 import { formatPct } from '@/lib/utils'
 import type { Run } from '@/lib/types'
 
@@ -22,12 +22,16 @@ export function Results() {
   // Replay mode: load from API
   const [run, setRun] = useState<Run | null>(null)
   const [replayError, setReplayError] = useState<string | null>(null)
+  const [replayJudgeResults, setReplayJudgeResults] = useState<JudgeResult[]>([])
 
   useEffect(() => {
     if (!isLive && runId) {
       getRun(runId)
         .then(setRun)
         .catch((e: Error) => setReplayError(e.message))
+      getRunLog(runId)
+        .then((log) => setReplayJudgeResults(log.entries))
+        .catch(() => setReplayJudgeResults([]))
     }
   }, [isLive, runId])
 
@@ -36,12 +40,12 @@ export function Results() {
   // Derive display values from live or replay mode
   const finalStats = isLive
     ? sse.finalStats
-    : run?.results[0]
+    : run?.results?.[0]
       ? { mean: run.results[0].mean, median: run.results[0].median, std: run.results[0].std, histogram: run.results[0].histogram }
       : null
 
   const progressPct = isLive ? (sse.progress?.pct ?? 0) : 100
-  const isComplete = isLive ? sse.status === 'complete' : run !== null
+  const isComplete = isLive ? sse.status === 'complete' : run?.status === 'complete'
 
   if (replayError) {
     return <p className="text-destructive">Error loading run: {replayError}</p>
@@ -86,9 +90,9 @@ export function Results() {
                 sse.judgeResults.map((r, i) => <JudgeCard key={i} result={r} />)
               )
             ) : (
-              <p className="text-muted-foreground text-sm mt-4">
-                Individual judge results not available in replay mode.
-              </p>
+              replayJudgeResults.length === 0
+                ? <p className="text-muted-foreground text-sm mt-4">No judge log available.</p>
+                : replayJudgeResults.map((r, i) => <JudgeCard key={i} result={r} />)
             )}
             {sse.error && <p className="text-destructive text-sm mt-2">{sse.error}</p>}
           </ScrollArea>

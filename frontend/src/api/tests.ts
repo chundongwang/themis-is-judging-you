@@ -1,5 +1,5 @@
 import type { Test } from '@/lib/types'
-import { delay } from './client'
+import { apiFetch, delay } from './client'
 
 const FIXTURE_TESTS: Test[] = [
   {
@@ -53,10 +53,10 @@ export async function getTest(id: string): Promise<Test> {
 }
 
 export async function createTest(data: Omit<Test, 'id' | 'created_at'>): Promise<Test> {
-  await delay()
-  const test: Test = { id: `test-${Date.now()}`, created_at: new Date().toISOString(), ...data }
-  FIXTURE_TESTS.push(test)
-  return test
+  return apiFetch<Test>('/api/tests', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
 }
 
 export async function updateTest(id: string, data: Partial<Test>): Promise<Test> {

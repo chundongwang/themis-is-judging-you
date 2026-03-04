@@ -9,11 +9,23 @@ export async function getRun(id: string): Promise<Run> {
   return apiFetch<Run>(`/api/runs/${id}`)
 }
 
-export async function createRun(testId: string): Promise<Run> {
-  return apiFetch<Run>('/api/runs', {
+export async function createRun(
+  populationId: string,
+  panelSize: number,
+  subjectImage: string | null = null,
+): Promise<Run> {
+  return apiFetch<Run>('/api/runs/quick', {
     method: 'POST',
-    body: JSON.stringify({ test_id: testId }),
+    body: JSON.stringify({
+      population_id: populationId,
+      panel_size: panelSize,
+      subject_image: subjectImage,
+    }),
   })
+}
+
+export async function getRunLog(id: string): Promise<{ entries: import('@/lib/types').JudgeResult[] }> {
+  return apiFetch(`/api/runs/${id}/log`)
 }
 
 export async function deleteRun(id: string): Promise<void> {
