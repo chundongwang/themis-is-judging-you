@@ -17,7 +17,7 @@ FIXTURE_REASONS = [
 
 
 async def call_judge(
-    prompt: str,
+    messages: list[dict],
     scale_min: float,
     scale_max: float,
     flipped: bool,
@@ -39,11 +39,25 @@ async def call_judge(
 
         response = await litellm.acompletion(
             model=settings.MODEL,
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
             temperature=settings.LLM_TEMPERATURE,
-            response_format={"type": "json_object"},
         )
-        content = response.choices[0].message.content
+        if not isinstance(response, litellm.ModelResponse):
+            raise TypeError(f"Expected ModelResponse, got {type(response)}")
+        if not response.choices:
+            raise ValueError("LLM returned no choices")
+        choice = response.choices[0]
+        container = choice.message if isinstance(choice, litellm.Choices) else choice.delta
+        content = container.content
+
+        if content is None:
+            raise ValueError("LLM returned empty content")
+        content = content.strip()
+        # Strip markdown code fences if the model wraps its output
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
         parsed = json.loads(content)
         raw_score = float(parsed["score"])
         reason = str(parsed["reason"])

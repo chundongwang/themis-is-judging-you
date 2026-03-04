@@ -53,6 +53,24 @@ def _render_prompt(template: str, judge: dict, subject_text: str) -> str:
     return prompt
 
 
+def _build_messages(system: str, prompt: str, image_data_url: str | None) -> list[dict]:
+    """Build the messages list for litellm. Adds an image block when image is present."""
+    if image_data_url:
+        # data URL format: "data:<mime>;base64,<data>"
+        media_type = image_data_url.split(";")[0].split(":")[1]
+        b64_data = image_data_url.split(",", 1)[1]
+        user_content = [
+            {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{b64_data}"}},
+            {"type": "text", "text": prompt},
+        ]
+    else:
+        user_content = prompt
+    return [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_content},
+    ]
+
+
 async def execute_run(run_id: str) -> None:
     """
     Background task: execute a run end-to-end, pushing SSE events to the run queue.
@@ -96,15 +114,19 @@ async def execute_run(run_id: str) -> None:
             per_subject_scores: dict[str, list[float]] = {s["id"]: [] for s in subjects}
             log_entries: list[dict] = []
 
+            system = (
+                "You are a human judge evaluating a subject. "
+                "Respond with valid JSON only, using exactly this schema: "
+                '{"score": <number>, "reason": "<one sentence>"}. '
+                "No other keys, no markdown, no explanation outside the JSON."
+            )
+
             async def judge_one(judge: dict, subject: dict) -> None:
                 nonlocal completed
                 flipped = random.random() < 0.5
                 prompt = _render_prompt(test.prompt_template, judge, subject["text"])
-                if flipped:
-                    # Build flipped variant by substituting key verb
-                    flipped_prompt = prompt  # stub: just use same prompt with flag
-
-                score, reason = await call_judge(prompt, scale_min, scale_max, flipped)
+                messages = _build_messages(system, prompt, subject.get("image"))
+                score, reason = await call_judge(messages, scale_min, scale_max, flipped)
 
                 per_subject_scores[subject["id"]].append(score)
                 log_entries.append(
