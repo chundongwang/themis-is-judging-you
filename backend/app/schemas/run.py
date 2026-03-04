@@ -19,6 +19,12 @@ class RunCreate(BaseModel):
     test_id: str
 
 
+class QuickRunCreate(BaseModel):
+    population_id: str
+    panel_size: int = 20
+    subject_image: str | None = None  # base64 data URL
+
+
 class SSEProgressEvent(BaseModel):
     completed: int
     total: int

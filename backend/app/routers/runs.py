@@ -4,7 +4,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.repositories.run import RunRepository
 from app.repositories.test import TestRepository
-from app.schemas.run import RunRead, RunCreate
+from app.schemas.run import RunRead, RunCreate, QuickRunCreate
+from app.schemas.common import Subject, ScaleConfig
+from app.schemas.test import TestCreate
+from app.repositories.population import PopulationRepository
+
+# Default prompt template for quick (photo rating) runs.
+# Variables are filled from judge profile dimension names at runtime.
+_QUICK_PROMPT_TEMPLATE = (
+    "You are a {{age}}-year-old {{gender}} working as {{occupation}}. "
+    "Rate the attractiveness of the person in this photo on a scale from 1 to 10, "
+    "thinking and responding as this specific person would — with their background, "
+    "tastes, and worldview. Be genuine and direct.\n\n"
+    "Respond with JSON only: {{\"score\": <1-10>, \"reason\": \"<one sentence>\"}}"
+)
 from app.engine.runner import execute_run, stream_run_events
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -22,6 +35,33 @@ async def get_run(run_id: str, session: AsyncSession = Depends(get_session)):
     run = await repo.get(run_id)
     if run is None:
         raise HTTPException(status_code=404, detail="Run not found")
+    return run
+
+
+@router.post("/quick", response_model=RunRead, status_code=201)
+async def create_quick_run(
+    data: QuickRunCreate,
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
+):
+    pop_repo = PopulationRepository(session)
+    population = await pop_repo.get(data.population_id)
+    if population is None:
+        raise HTTPException(status_code=404, detail="Population not found")
+
+    test_repo = TestRepository(session)
+    test = await test_repo.create(TestCreate(
+        name="Photo Rating",
+        prompt_template=_QUICK_PROMPT_TEMPLATE,
+        scale=ScaleConfig(min=1, max=10, label="attractiveness"),
+        population_id=data.population_id,
+        panel_size=data.panel_size,
+        subjects=[Subject(id="subject-1", text="", image=data.subject_image)],
+    ))
+
+    run_repo = RunRepository(session)
+    run = await run_repo.create(test_id=test.id, panel_size=test.panel_size)
+    background_tasks.add_task(execute_run, run.id)
     return run
 
 
@@ -58,6 +98,17 @@ async def stream_run(run_id: str, session: AsyncSession = Depends(get_session)):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.get("/{run_id}/log")
+async def get_run_log(run_id: str, session: AsyncSession = Depends(get_session)):
+    from app.models.run_log import RunLog
+    from sqlalchemy import select
+    result = await session.execute(select(RunLog).where(RunLog.run_id == run_id))
+    log = result.scalar_one_or_none()
+    if log is None:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return {"entries": log.entries}
 
 
 @router.delete("/{run_id}", status_code=204)
